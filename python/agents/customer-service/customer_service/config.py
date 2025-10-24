@@ -19,15 +19,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, Field
 
 
-logging.basicConfig(level=logging.DEBUG)
+# Set root logger to WARNING to prevent verbose library logs
+# that may contain sensitive information (e.g., ADK's google_llm.py)
+logging.basicConfig(level=logging.WARNING)
+
+# Enable DEBUG only for customer_service module
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class AgentModel(BaseModel):
     """Agent model settings."""
 
     name: str = Field(default="customer_service_agent")
-    model: str = Field(default="gemini-2.5-flash")
+    # model: str = Field(default="gemini-2.5-flash")
+    model: str = Field(default="gemini-live-2.5-flash-preview-native-audio")
 
 
 class Config(BaseSettings):
@@ -39,6 +45,7 @@ class Config(BaseSettings):
         ),
         env_prefix="GOOGLE_",
         case_sensitive=True,
+        extra="ignore",  # Allow extra env vars (like AGENT_VOICE, AGENT_LANGUAGE, APP_NAME)
     )
     agent_settings: AgentModel = Field(default=AgentModel())
     app_name: str = "customer_service_app"

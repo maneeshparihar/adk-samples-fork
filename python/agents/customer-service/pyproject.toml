@@ -39,6 +39,11 @@ lint = [
     "types-pyyaml>=6.0.12.20240917",
     "types-requests>=2.32.0.20240914",
 ]
+voice = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "python-dotenv>=1.0.0",
+]
 
 
 [tool.pytest.ini_options]
