@@ -48,11 +48,18 @@ parser.add_argument(
     help="Delete deployed agent",
 )
 parser.add_argument(
+    "--update",
+    action="store_true",
+    dest="update",
+    required=False,
+    help="Update existing deployed agent instead of creating new one",
+)
+parser.add_argument(
     "--resource_id",
-    required="--delete" in sys.argv,
+    required="--delete" in sys.argv or "--update" in sys.argv,
     action="store",
     dest="resource_id",
-    help="The resource id of the agent to be deleted in the format projects/PROJECT_ID/locations/LOCATION/reasoningEngines/REASONING_ENGINE_ID",
+    help="The resource id of the agent (format: projects/PROJECT_ID/locations/LOCATION/reasoningEngines/REASONING_ENGINE_ID)",
 )
 
 
@@ -67,11 +74,40 @@ if args.delete:
         print(e)
         print(f"Agent {args.resource_id} not found")
 
+elif args.update:
+    logger.info("Updating existing agent...")
+    app = AdkApp(agent=root_agent, enable_tracing=False)
+    
+    try:
+        # Check if agent exists
+        existing_agent = agent_engines.get(resource_name=args.resource_id)
+        logger.info(f"Found existing agent: {args.resource_id}")
+        
+        # Update the agent
+        logging.debug("Updating agent in agent engine...")
+        remote_app = agent_engines.update(
+            resource_name=args.resource_id,
+            agent_engine=app,  # Correct parameter name
+            requirements=[
+                AGENT_WHL_FILE,
+            ],
+            extra_packages=[AGENT_WHL_FILE],
+        )
+        
+        print(f"✅ Agent updated successfully: {remote_app.resource_name}")
+        print(f"Query URL: https://{configs.CLOUD_LOCATION}-aiplatform.googleapis.com/v1/{remote_app.resource_name}:query")
+        print(f"Stream URL: https://{configs.CLOUD_LOCATION}-aiplatform.googleapis.com/v1/{remote_app.resource_name}:streamQuery?alt=sse")
+        
+    except NotFound as e:
+        print(f"❌ Agent {args.resource_id} not found")
+        print("Use deployment without --update flag to create a new agent")
+        sys.exit(1)
+
 else:
-    logger.info("deploying app...")
+    logger.info("Creating new agent...")
     app = AdkApp(agent=root_agent, enable_tracing=False)
 
-    logging.debug("deploying agent to agent engine:")
+    logging.debug("Deploying agent to agent engine...")
     remote_app = agent_engines.create(
         app,
         requirements=[
@@ -80,14 +116,7 @@ else:
         extra_packages=[AGENT_WHL_FILE],
     )
 
-    logging.debug("testing deployment:")
-    session = remote_app.create_session(user_id="123")
-    for event in remote_app.stream_query(
-        user_id="123",
-        session_id=session["id"],
-        message="hello!",
-    ):
-        if event.get("content", None):
-            print(
-                f"Agent deployed successfully under resource name: {remote_app.resource_name}"
-            )
+    print(f"✅ Agent deployed successfully!")
+    print(f"Resource name: {remote_app.resource_name}")
+    print(f"Query URL: https://{configs.CLOUD_LOCATION}-aiplatform.googleapis.com/v1/{remote_app.resource_name}:query")
+    print(f"Stream URL: https://{configs.CLOUD_LOCATION}-aiplatform.googleapis.com/v1/{remote_app.resource_name}:streamQuery?alt=sse")

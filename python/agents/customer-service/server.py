@@ -43,6 +43,10 @@ load_dotenv()
 
 configs = Config()
 
+# Override agent model to use Gemini Live for voice capabilities
+# (The default config uses standard Gemini for Agent Engine deployment)
+root_agent.model = "gemini-live-2.5-flash-preview-native-audio"
+
 # Configure logging
 logging.basicConfig(
     level=logging.WARNING,
