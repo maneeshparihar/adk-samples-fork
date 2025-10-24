@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Service Agent - Production Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 900px;
+            height: 700px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .status {
+            padding: 12px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 75%;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .message.user .message-avatar {
+            background: #667eea;
+        }
+        
+        .message.agent .message-avatar {
+            background: #764ba2;
+        }
+        
+        .message-content {
+            background: #f1f3f5;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+        
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message.agent .message-content {
+            background: #f1f3f5;
+            color: #333;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: #f1f3f5;
+            border-radius: 18px;
+            width: fit-content;
+        }
+        
+        .typing-indicator.active {
+            display: block;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .input-area {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+        
+        .input-area button {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .input-area button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .input-area button:active {
+            transform: translateY(0);
+        }
+        
+        .input-area button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .config-area {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .config-area label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .config-area input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: monospace;
+            transition: border-color 0.3s;
+        }
+        
+        .config-area input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .config-area input:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .config-area small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Customer Service Agent</h1>
+            <p>Production Deployment on Vertex AI Agent Engine</p>
+        </div>
+        
+        <div class="status">
+            <div class="status-indicator"></div>
+            <span id="statusText">Ready to connect</span>
+        </div>
+        
+        <div class="config-area">
+            <label for="serverUrl">🌐 Backend Server URL:</label>
+            <input 
+                type="text" 
+                id="serverUrl" 
+                placeholder="http://localhost:8001 or http://192.168.10.248:8001"
+                value="http://localhost:8001"
+            >
+            <small>Enter the backend server URL (changes only when not chatting)</small>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <div class="message agent">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    Hello! I'm Project Pro, your AI assistant from Cymbal Home & Garden. How can I help you today?
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <span></span><span></span><span></span>
+        </div>
+        
+        <div class="input-area">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Type your message here..."
+                onkeypress="if(event.key === 'Enter') sendMessage()"
+            >
+            <button onclick="sendMessage()" id="sendBtn">Send</button>
+            <button onclick="resetChat()" id="resetBtn" style="background: #f9ab00; padding: 12px 20px;">🔄 New</button>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        const userId = 'web_user_' + Date.now();
+        let isChatting = false; // Track if actively chatting
+        
+        // Get DOM elements
+        const serverUrlInput = document.getElementById('serverUrl');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusText = document.getElementById('statusText');
+        
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // Get and validate server URL
+            let serverUrl = serverUrlInput.value.trim();
+            if (!serverUrl) {
+                addMessage('agent', '❌ Please enter a backend server URL');
+                return;
+            }
+            
+            // Ensure it's a valid HTTP URL
+            if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+                addMessage('agent', '❌ Server URL must start with http:// or https://');
+                return;
+            }
+            
+            // Remove trailing slash if present
+            serverUrl = serverUrl.replace(/\/$/, '');
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Add user message to chat
+            addMessage('user', message);
+            
+            // Show typing indicator
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.classList.add('active');
+            
+            // Disable send button and lock server URL
+            sendBtn.disabled = true;
+            if (!isChatting) {
+                isChatting = true;
+                serverUrlInput.disabled = true;
+                statusText.textContent = 'Connected to deployed agent';
+            }
+            
+            try {
+                // Send message to backend
+                const response = await fetch(`${serverUrl}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        session_id: sessionId,
+                        message: message
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let agentResponse = '';
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.session_id && !sessionId) {
+                                sessionId = data.session_id;
+                            }
+                            
+                            if (data.text) {
+                                agentResponse += data.text;
+                            }
+                        }
+                    }
+                }
+                
+                // Hide typing indicator
+                typingIndicator.classList.remove('active');
+                
+                // Add agent response
+                if (agentResponse) {
+                    addMessage('agent', agentResponse);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.classList.remove('active');
+                addMessage('agent', '❌ Sorry, there was an error connecting to the backend server. Make sure it is running and the URL is correct.');
+                
+                // Reset connection state on error
+                isChatting = false;
+                serverUrlInput.disabled = false;
+                statusText.textContent = 'Connection error - check server URL';
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+        
+        function addMessage(sender, text) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = sender === 'user' ? '👤' : '🤖';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${text}</div>
+            `;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        function resetChat() {
+            // Confirm before clearing
+            if (isChatting && !confirm('Start a new session? This will clear the current conversation.')) {
+                return;
+            }
+            
+            // Clear chat
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML = `
+                <div class="message agent">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        Hello! I'm Project Pro, your AI assistant from Cymbal Home & Garden. How can I help you today?
+                    </div>
+                </div>
+            `;
+            
+            // Reset session
+            sessionId = null;
+            isChatting = false;
+            
+            // Re-enable server URL input
+            serverUrlInput.disabled = false;
+            statusText.textContent = 'Ready to connect';
+            
+            // Clear message input
+            messageInput.value = '';
+            messageInput.focus();
+        }
+        
+        // Focus input on load
+        window.onload = () => {
+            messageInput.focus();
+        };
+    </script>
+</body>
+</html>
+
