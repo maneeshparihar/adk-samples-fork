@@ -122,10 +122,10 @@ class Customer(BaseModel):
         return Customer(
             customer_id=current_customer_id,
             account_number="428765091",
-            customer_first_name="Alex",
-            customer_last_name="Johnson",
-            email="alex.johnson@example.com",
-            phone_number="+1-702-555-1212",
+            customer_first_name="Maneesh",
+            customer_last_name="Parihar",
+            email="maneeshparihar@gmail.com",
+            phone_number="+91-9958223407",
             customer_start_date="2022-06-10",
             years_as_customer=2,
             billing_address=Address(
