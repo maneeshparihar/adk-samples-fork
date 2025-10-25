@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.1">
+    <meta name="version" content="1.2">
     <title>Customer Service Agent - Production Demo</title>
     <style>
         * {
@@ -271,7 +271,7 @@
     <div class="container">
         <div class="header">
             <h1>🌱 Customer Service Agent</h1>
-            <p>Production Deployment on Vertex AI Agent Engine <span style="opacity: 0.7; font-size: 11px;">(v1.1)</span></p>
+            <p>Production Deployment on Vertex AI Agent Engine <span style="opacity: 0.7; font-size: 11px;">(v1.2)</span></p>
         </div>
         
         <div class="status">
@@ -285,7 +285,7 @@
                 type="text" 
                 id="serverUrl" 
                 placeholder="http://localhost:8001 or http://192.168.10.248:8001"
-                value="http://localhost:8001"
+                value="http://35.209.161.176:8001"
             >
             <small>Enter the backend server URL (changes only when not chatting)</small>
         </div>
@@ -317,7 +317,7 @@
 
     <script>
         // Version 1.1 - Fixed session ID tracking for multi-turn conversations
-        console.log('🌱 Customer Service Agent Web UI v1.1');
+        console.log('🌱 Customer Service Agent Web UI v1.2');
         
         let sessionId = null;
         const userId = 'web_user_' + Date.now();
