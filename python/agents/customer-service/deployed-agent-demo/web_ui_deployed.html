@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="version" content="1.1">
     <title>Customer Service Agent - Production Demo</title>
     <style>
         * {
@@ -270,7 +271,7 @@
     <div class="container">
         <div class="header">
             <h1>🌱 Customer Service Agent</h1>
-            <p>Production Deployment on Vertex AI Agent Engine</p>
+            <p>Production Deployment on Vertex AI Agent Engine <span style="opacity: 0.7; font-size: 11px;">(v1.1)</span></p>
         </div>
         
         <div class="status">
@@ -315,6 +316,9 @@
     </div>
 
     <script>
+        // Version 1.1 - Fixed session ID tracking for multi-turn conversations
+        console.log('🌱 Customer Service Agent Web UI v1.1');
+        
         let sessionId = null;
         const userId = 'web_user_' + Date.now();
         let isChatting = false; // Track if actively chatting
@@ -366,6 +370,8 @@
             
             try {
                 // Send message to backend
+                console.log('📤 Sending query:', { user_id: userId, session_id: sessionId, message });
+                
                 const response = await fetch(`${serverUrl}/query`, {
                     method: 'POST',
                     headers: {
@@ -385,26 +391,60 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let agentResponse = '';
+                let buffer = '';  // Buffer for incomplete lines
                 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
                     
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
+                    // Decode and add to buffer
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    
+                    // Keep the last incomplete line in buffer
+                    buffer = lines.pop() || '';
                     
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
-                            const data = JSON.parse(line.slice(6));
-                            
-                            if (data.session_id && !sessionId) {
-                                sessionId = data.session_id;
-                            }
-                            
-                            if (data.text) {
-                                agentResponse += data.text;
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                
+                                // Always update session_id to use the latest one
+                                // (the agent may send multiple events with different session IDs,
+                                // and we want to use the one associated with the actual content)
+                                if (data.session_id) {
+                                    if (sessionId !== data.session_id) {
+                                        console.log('🔄 Session ID updated:', data.session_id);
+                                    }
+                                    sessionId = data.session_id;
+                                }
+                                
+                                if (data.text) {
+                                    agentResponse += data.text;
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse line:', line, e);
                             }
                         }
+                    }
+                }
+                
+                // Process any remaining buffered line
+                if (buffer.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(buffer.slice(6));
+                        // Always update session_id to use the latest one
+                        if (data.session_id) {
+                            if (sessionId !== data.session_id) {
+                                console.log('🔄 Session ID updated:', data.session_id);
+                            }
+                            sessionId = data.session_id;
+                        }
+                        if (data.text) {
+                            agentResponse += data.text;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse final buffer:', buffer, e);
                     }
                 }
                 
@@ -415,6 +455,8 @@
                 if (agentResponse) {
                     addMessage('agent', agentResponse);
                 }
+                
+                console.log('✅ Response complete. Session ID for next request:', sessionId);
                 
             } catch (error) {
                 console.error('Error:', error);
